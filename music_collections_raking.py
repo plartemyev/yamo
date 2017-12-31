@@ -43,35 +43,44 @@ class Mp3File:
             return '', '', ''
 
 
-def scan_dir_for_media(_path):
-    for _entry in os.scandir(_path):
+def rearrange_files(_params, _lib):
+    if _params['move_to'] == _params['target_dir'] and _params['dir_structure'] == 'plain':
+        _new_path = os.path.join(os.path.dirname(_params['target_dir']), '{}.mp3'.format(mp3.title))  # TODO: rewrite.
+        mr_logger.debug('Moving to {}'.format(_new_path))
+        try:
+            if os.path.exists(os.path.dirname(_new_path)):
+                os.rename(mp3.file_path, _new_path)
+            else:
+                os.makedirs(os.path.dirname(_new_path))
+                os.rename(mp3.file_path, _new_path)
+        except Exception as e:
+            mr_logger.exception("Couldn't move file {} to {}\n{}".format(mp3.file_path, _new_path, e))
+
+
+def scan_dir_for_media(_p):
+    if 'lib' not in _p.keys():  # So this function could be invoked recursively without overwriting the _lib
+        mr_logger.info('Launching a scan of {}'.format(_p['target_dir']))
+        _p['lib'] = {}
+
+    for _entry in os.scandir(_p['target_dir']):
         if _entry.is_dir(follow_symlinks=False):
-            scan_dir_for_media(_entry.path)
+            _p['target_dir'] = _entry.path
+            scan_dir_for_media(_p)
         elif _entry.name.lower().endswith('.mp3'):
-            mp3 = Mp3File(_entry.path)
-            if move_to == target_dir and sort == 'plain':
-                _new_path = os.path.join(os.path.dirname(target_dir), '{}.mp3'.format(mp3.title))
-                mr_logger.debug('Moving to {}'.format(_new_path))
-                try:
-                    if os.path.exists(os.path.dirname(_new_path)):
-                        os.rename(mp3.file_path, _new_path)
-                    else:
-                        os.makedirs(os.path.dirname(_new_path))
-                        os.rename(mp3.file_path, _new_path)
-                except Exception as e:
-                    mr_logger.exception("Couldn't move file {} to {}\n{}".format(mp3.file_path, _new_path, e))
+            _mp3_file = Mp3File(_entry.path)
+
+            if _mp3_file.performer not in _p['lib'].keys():
+                _p['lib'][_mp3_file.performer] = {_mp3_file.album: [_mp3_file]}
+            else:
+                if _mp3_file.album not in _p['lib'][_mp3_file.performer].keys():
+                    _p['lib'][_mp3_file.performer][_mp3_file.album] = [_mp3_file]
+                else:
+                    _p['lib'][_mp3_file.performer][_mp3_file.album].append(_mp3_file)
+
+    return _p['lib']
 
 
 def messy_proto():
-    for root, dirs, files in os.walk(target_dir):
-        for file in files:
-            if file.lower().endswith(".mp3"):
-                s_artist = os.path.basename(target_dir)
-                s_album = os.path.basename(root)
-                mp3_filename = file
-                mp3_filepath = os.path.join(root, file)
-
-
     t_string = "12    Best Of The Best. Part One. The Past. CD 8 - Electro Lights (2005) = +_  "
     t_string = re.sub(r'(\s\s+)|(\d)|([\)\(\}\{\[\]\-\_\=\+\.])', '', t_string)
     t_string = re.sub(r'(\s\s+)', ' ', t_string)
@@ -83,8 +92,9 @@ def get_args():
     cli = argparse.ArgumentParser(description='Organize mp3 collections')
     cli.add_argument('--target_dir', metavar='D', type=str, help='Specify top directory to process.')
     cli.add_argument('--move_to', metavar='M', type=str, help='Specify where to move the files')
-    cli.add_argument('--sort', metavar='S', type=str, default='plain',
-                     help='Grab the files by performer or by performer and albums (plain/albums)')
+    cli.add_argument('--do_your_thing', action='store_true', help='Without this key no harm will be done')
+    cli.add_argument('--dir_structure', metavar='S', type=str, default='plain',
+                     help='Arrange the files by performer or by performer and albums (plain/albums)')
     cli.add_argument('--debug', action='store_true')
     cli_args = cli.parse_args()
 
@@ -105,7 +115,8 @@ def get_args():
     else:
         _move_to = cli_args.move_to
 
-    return _target_dir, _move_to, cli_args.sort
+    return {'target_dir': _target_dir, 'move_to': _move_to,
+            'dir_structure': cli_args.dir_structure, 'green_light': cli_args.do_your_thing}
 
 
 def logger_init():
@@ -120,8 +131,13 @@ def logger_init():
 
 
 if __name__ == '__main__':
-    target_dir, move_to, sort = get_args()
-    logger_init()
-    mr_logger.info('Launching a scan of {}'.format(target_dir))
+    params = get_args()
 
-    scan_dir_for_media(target_dir)
+    logger_init()
+
+    mp3_lib = scan_dir_for_media(params)
+
+    for performer, albums in mp3_lib.items():
+        for album, mp3_files in albums.items():
+            for f in mp3_files:
+                print('{} - {} - {}\t({})'.format(performer, album, f.title, f.file_path))
