@@ -13,7 +13,7 @@ logging.captureWarnings(True)
 class Mp3File:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.performer, self.album, self.title = self.get_track_info(file_path)
+        self.performer, self.album, self.title, self.index, self.year = self.get_track_info(file_path)
         if len(self.performer) < 2:
             mr_logger.info('Performer tag for file {} is fishy. Trying to guess it'.format(os.path.basename(file_path)))
             self.performer = self.guess_track_info(file_path, 'performer')
@@ -37,24 +37,26 @@ class Mp3File:
             _track_performer = str(mp3tags.get(key='TPE1'))
             _track_album = str(mp3tags.get(key='TALB'))
             _track_title = str(mp3tags.get(key='TIT2'))
-            return _track_performer, _track_album, _track_title
+            _track_ind = int(str(mp3tags.get(key='TRCK')).split('/')[0])
+            _track_year = int(str(mp3tags.get(key='TDRC')))
+            return _track_performer, _track_album, _track_title, _track_ind, _track_year
         except Exception as e:
             mr_logger.info('Unable to read IDv3 tags, going to use file name and dir structure', e)
             return '', '', ''
 
 
-def rearrange_files(_params, _lib):
-    if _params['move_to'] == _params['target_dir'] and _params['dir_structure'] == 'plain':
-        _new_path = os.path.join(os.path.dirname(_params['target_dir']), '{}.mp3'.format(mp3.title))  # TODO: rewrite.
-        mr_logger.debug('Moving to {}'.format(_new_path))
-        try:
-            if os.path.exists(os.path.dirname(_new_path)):
-                os.rename(mp3.file_path, _new_path)
-            else:
-                os.makedirs(os.path.dirname(_new_path))
-                os.rename(mp3.file_path, _new_path)
-        except Exception as e:
-            mr_logger.exception("Couldn't move file {} to {}\n{}".format(mp3.file_path, _new_path, e))
+# def process_file(_params, _lib):
+#     if _params['move_to'] == _params['target_dir'] and _params['dir_structure'] == 'plain':
+#         _new_path = os.path.join(os.path.dirname(_params['target_dir']), '{}.mp3'.format(mp3.title))  # TODO: rewrite.
+#         mr_logger.debug('Moving to {}'.format(_new_path))
+#         try:
+#             if os.path.exists(os.path.dirname(_new_path)):
+#                 os.rename(mp3.file_path, _new_path)
+#             else:
+#                 os.makedirs(os.path.dirname(_new_path))
+#                 os.rename(mp3.file_path, _new_path)
+#         except Exception as e:
+#             mr_logger.exception("Couldn't move file {} to {}\n{}".format(mp3.file_path, _new_path, e))
 
 
 def scan_dir_for_media(_p):
@@ -69,13 +71,15 @@ def scan_dir_for_media(_p):
         elif _entry.name.lower().endswith('.mp3'):
             _mp3_file = Mp3File(_entry.path)
 
-            if _mp3_file.performer not in _p['lib'].keys():
-                _p['lib'][_mp3_file.performer] = {_mp3_file.album: [_mp3_file]}
+            if _mp3_file.performer not in _p['lib'].keys():     # Initializing new performer tree
+                _p['lib'][_mp3_file.performer] = {_mp3_file.album: {'year': _mp3_file.year, 'tracks': [_mp3_file]}}
             else:
-                if _mp3_file.album not in _p['lib'][_mp3_file.performer].keys():
-                    _p['lib'][_mp3_file.performer][_mp3_file.album] = [_mp3_file]
-                else:
-                    _p['lib'][_mp3_file.performer][_mp3_file.album].append(_mp3_file)
+                if _mp3_file.album not in _p['lib'][_mp3_file.performer].keys():    # Initializing new album
+                    _p['lib'][_mp3_file.performer][_mp3_file.album] = {'year': _mp3_file.year, 'tracks': [_mp3_file]}
+                else:   # Just adding another track
+                    _p['lib'][_mp3_file.performer][_mp3_file.album]['tracks'].append(_mp3_file)
+                    if _mp3_file.year > _p['lib'][_mp3_file.performer][_mp3_file.album]['year']:    # Bumping album year
+                        _p['lib'][_mp3_file.performer][_mp3_file.album]['year'] = _mp3_file.year
 
     return _p['lib']
 
@@ -93,6 +97,7 @@ def get_args():
     cli.add_argument('--target_dir', metavar='D', type=str, help='Specify top directory to process.')
     cli.add_argument('--move_to', metavar='M', type=str, help='Specify where to move the files')
     cli.add_argument('--do_your_thing', action='store_true', help='Without this key no harm will be done')
+    cli.add_argument('--ignore_performer_tag', action='store_true', help='Prefer deriving performer by other means')
     cli.add_argument('--dir_structure', metavar='S', type=str, default='plain',
                      help='Arrange the files by performer or by performer and albums (plain/albums)')
     cli.add_argument('--debug', action='store_true')
@@ -115,8 +120,8 @@ def get_args():
     else:
         _move_to = cli_args.move_to
 
-    return {'target_dir': _target_dir, 'move_to': _move_to,
-            'dir_structure': cli_args.dir_structure, 'green_light': cli_args.do_your_thing}
+    return {'target_dir': _target_dir, 'move_to': _move_to, 'dir_structure': cli_args.dir_structure,
+            'green_light': cli_args.do_your_thing, 'ignore_performer_tag': cli_args.ignore_performer_tag}
 
 
 def logger_init():
