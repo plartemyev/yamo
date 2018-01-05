@@ -4,7 +4,10 @@ import argparse
 import os
 import re
 import logging
+import shutil
+
 import mutagen.mp3
+import sys
 
 mr_logger = logging.getLogger(__name__)
 logging.captureWarnings(True)
@@ -41,29 +44,66 @@ class Mp3File:
             _track_year = int(str(mp3tags.get(key='TDRC')))
             return _track_performer, _track_album, _track_title, _track_ind, _track_year
         except Exception as e:
-            mr_logger.info('Unable to read IDv3 tags, going to use file name and dir structure', e)
+            mr_logger.info('Unable to read IDv3 tags, going to use other means of identification', e)
             return '', '', ''
 
 
-# def process_file(_params, _lib):
-#     if _params['move_to'] == _params['target_dir'] and _params['dir_structure'] == 'plain':
-#         _new_path = os.path.join(os.path.dirname(_params['target_dir']), '{}.mp3'.format(mp3.title))  # TODO: rewrite.
-#         mr_logger.debug('Moving to {}'.format(_new_path))
-#         try:
-#             if os.path.exists(os.path.dirname(_new_path)):
-#                 os.rename(mp3.file_path, _new_path)
-#             else:
-#                 os.makedirs(os.path.dirname(_new_path))
-#                 os.rename(mp3.file_path, _new_path)
-#         except Exception as e:
-#             mr_logger.exception("Couldn't move file {} to {}\n{}".format(mp3.file_path, _new_path, e))
+def process_file(_p: dict, _album: dict, _media_file: Mp3File) -> str:
+    if _p['target_dir'] == _p['source_dir'] and _p['dir_structure'] == 'plain':
+        # In-place files reorganization to new style: 0101 Track_name.extension - first 01 is an Album index
+        _new_name = '{:02d}{:02d} {}.mp3'.format(_album['index'], _media_file.index, _media_file.title)
+        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _new_name)
+    elif _p['target_dir'] == _p['source_dir'] and _p['dir_structure'] == 'albums':
+        # In-place files reorganization to new style: Album_year Album_name/01 Track_name.extension
+        _new_name = '{:02d} {}.mp3'.format(_media_file.index, _media_file.title)
+        _new_path = os.path.join(os.path.dirname(_p['source_dir']), '{} {}'.format(_album['year'], _album['name']),
+                                 _new_name)
+    elif _p['target_dir'] != _p['source_dir'] and _p['dir_structure'] == 'plain':
+        # Total files reorganization to new style: Performer/0101 Track_name.extension - first 01 is an Album index
+        _new_name = '{:02d}{:02d} {}.mp3'.format(_album['index'], _media_file.index, _media_file.title)
+        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _media_file.performer, _new_name)
+    elif _p['target_dir'] != _p['source_dir'] and _p['dir_structure'] == 'albums':
+        # Total files reorganization to new style: Performer/Album_year Album_name/01 Track_name.extension
+        _new_name = '{:02d} {}.mp3'.format(_media_file.index, _media_file.title)
+        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _media_file.performer,
+                                 '{} {}'.format(_album['year'], _album['name']), _new_name)
+    else:
+        _new_name = '{:02d}{:02d} {}.mp3'.format(_album['index'], _media_file.index, _media_file.title)
+        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _new_name)
+        mr_logger.warning('Unrecognized file layout requested. Using {}'.format(_new_path))
+
+    if _media_file.file_path == _new_path:
+        #  Normally this shouldn't happen
+        mr_logger.warning('Duplicated file encountered - {}'.format(_new_path))
+
+    mr_logger.debug('Processing {} to {}'.format(_media_file.file_path, _new_path))
+
+    try:
+        if not os.path.exists(os.path.dirname(_new_path)):
+            os.makedirs(os.path.dirname(_new_path))
+
+        if _p['op_mode'] == 'move':
+            shutil.move(_media_file.file_path, _new_path)
+            return _new_path
+        elif _p['op_mode'] == 'copy' and _p['target_dir'] != _p['source_dir']:
+            shutil.copy2(_media_file.file_path, _new_path)
+            return _new_path
+        elif _p['op_mode'] == 'copy' and _p['target_dir'] == _p['source_dir']:
+            mr_logger.error('Attempted to re-organize files in-place using copy op_mode. That would be a mess. Exiting')
+            sys.exit(2)
+        else:
+            # Dry run mode - log intentions and do nothing
+            mr_logger.info('Dry run mode. Wanted to process {} to {}'.format(_media_file.file_path, _new_path))
+            return _new_path
+    except Exception as e:
+        mr_logger.exception("Couldn't move file {} to {}\n{}".format(_media_file.file_path, _new_path, e))
 
 
-def scan_dir_for_media(_target_dir, _file_list):
-    for _entry in os.scandir(_target_dir):
+def scan_dir_for_media(_source_dir, _file_list):
+    for _entry in os.scandir(_source_dir):
         if _entry.is_dir(follow_symlinks=False):
-            _target_dir = _entry.path
-            scan_dir_for_media(_target_dir, _file_list)
+            _source_dir = _entry.path
+            scan_dir_for_media(_source_dir, _file_list)
         elif _entry.name.lower().endswith('.mp3'):
             _file_list.append(_entry.path)
 
@@ -88,7 +128,7 @@ def lib_processing(_p, _file_list):
 
     for _performer, _albums in _lib.items():
         albums_by_year = sorted(_albums, key=lambda _k: _albums[_k]['year'])
-        for _index, _album in enumerate(albums_by_year):
+        for _index, _album in enumerate(albums_by_year, 1):
             _lib[_performer][_album]['index'] = _index
 
     return _lib
@@ -104,11 +144,10 @@ def messy_proto():
 
 def get_args():
     cli = argparse.ArgumentParser(description='Organize mp3 collections')
-    cli.add_argument('--target_dir', metavar='D', type=str, help='Specify top directory to process.')
-    cli.add_argument('--move_to', metavar='M', type=str, help='Specify where to move the files')
-    cli.add_argument('--do_your_thing', action='store_true', help='Without this key no harm will be done')
-    cli.add_argument('--ignore_performer_tag', action='store_true', help='Prefer deriving performer by other means')
-    cli.add_argument('--dir_structure', metavar='S', type=str, default='plain',
+    cli.add_argument('--source_dir', type=str, help='Specify source directory to process.')
+    cli.add_argument('--target_dir', type=str, help='Specify where to move the files')
+    cli.add_argument('--op_mode', type=str, default='no-op', help='Mode of operation (no-op/copy/move/')
+    cli.add_argument('--dir_structure', type=str, default='plain',
                      help='Arrange the files by performer or by performer and albums (plain/albums)')
     cli.add_argument('--debug', action='store_true')
     cli_args = cli.parse_args()
@@ -118,20 +157,24 @@ def get_args():
     else:
         mr_logger.setLevel('INFO')
 
+    if cli_args.source_dir is None:
+        _source_dir = os.getcwd()
+        mr_logger.info("Source directory wasn't specified, so assume it's {}".format(_source_dir))
+    else:
+        _source_dir = cli_args.source_dir
+
     if cli_args.target_dir is None:
-        _target_dir = os.getcwd()
-        mr_logger.info("Top directory wasn't specified, so assume it's {}".format(_target_dir))
+        _target_dir = _source_dir
+        mr_logger.info("Directory where to copy/move the files wasn't specified, so they'll be reorganized in-place")
     else:
         _target_dir = cli_args.target_dir
 
-    if cli_args.move_to is None:
-        _move_to = _target_dir
-        mr_logger.info("Directory where to move the files wasn't specified, so they'll be reorganized in place")
-    else:
-        _move_to = cli_args.move_to
+    if cli_args.op_mode == 'copy' and _target_dir == _source_dir:
+        mr_logger.error('Attempted to re-organize files in-place using copy op_mode. That would be a mess. Exiting')
+        sys.exit(2)
 
-    return {'target_dir': _target_dir, 'move_to': _move_to, 'dir_structure': cli_args.dir_structure,
-            'green_light': cli_args.do_your_thing, 'ignore_performer_tag': cli_args.ignore_performer_tag}
+    return {'source_dir': _source_dir, 'target_dir': _target_dir, 'dir_structure': cli_args.dir_structure,
+            'op_mode': cli_args.op_mode}
 
 
 def logger_init():
@@ -150,7 +193,7 @@ if __name__ == '__main__':
 
     logger_init()
 
-    mp3_files = scan_dir_for_media(params['target_dir'], [])
+    mp3_files = scan_dir_for_media(params['source_dir'], [])
     mp3_lib = lib_processing(params, mp3_files)
 
     for performer, albums in mp3_lib.items():
