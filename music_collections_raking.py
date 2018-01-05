@@ -59,37 +59,39 @@ class Mp3File:
 #             mr_logger.exception("Couldn't move file {} to {}\n{}".format(mp3.file_path, _new_path, e))
 
 
-def scan_dir_for_media(_p):  # TODO: move library organization logic to separate function
-    if 'lib' not in _p.keys():  # So this function could be invoked recursively without overwriting the _lib
-        mr_logger.info('Launching a scan of {}'.format(_p['target_dir']))
-        _p['lib'] = {}
-
-    for _entry in os.scandir(_p['target_dir']):
+def scan_dir_for_media(_target_dir, _file_list):
+    for _entry in os.scandir(_target_dir):
         if _entry.is_dir(follow_symlinks=False):
-            _p['target_dir'] = _entry.path
-            scan_dir_for_media(_p)
+            _target_dir = _entry.path
+            scan_dir_for_media(_target_dir, _file_list)
         elif _entry.name.lower().endswith('.mp3'):
-            _mp3_file = Mp3File(_entry.path)
+            _file_list.append(_entry.path)
 
-            if _mp3_file.performer not in _p['lib'].keys():  # Initializing new performer tree
-                _p['lib'][_mp3_file.performer] = {_mp3_file.album: {'year': _mp3_file.year, 'tracks': [_mp3_file]}}
-            else:
-                if _mp3_file.album not in _p['lib'][_mp3_file.performer].keys():  # Initializing new album
-                    _p['lib'][_mp3_file.performer][_mp3_file.album] = {'year': _mp3_file.year, 'tracks': [_mp3_file]}
-                else:   # Just adding another track
-                    _p['lib'][_mp3_file.performer][_mp3_file.album]['tracks'].append(_mp3_file)
-                    if _mp3_file.year > _p['lib'][_mp3_file.performer][_mp3_file.album]['year']:  # Bumping album year
-                        _p['lib'][_mp3_file.performer][_mp3_file.album]['year'] = _mp3_file.year
-
-    return _p['lib']
+    return _file_list
 
 
-def lib_processing(_p, _lib):
+def lib_processing(_p, _file_list):
+    _lib = {}
+
+    for _file in _file_list:
+        _mp3_file = Mp3File(_file)
+
+        if _mp3_file.performer not in _lib.keys():  # Initializing new performer tree
+            _lib[_mp3_file.performer] = {_mp3_file.album: {'year': _mp3_file.year, 'tracks': [_mp3_file]}}
+        else:
+            if _mp3_file.album not in _lib[_mp3_file.performer].keys():  # Initializing new album
+                _lib[_mp3_file.performer][_mp3_file.album] = {'year': _mp3_file.year, 'tracks': [_mp3_file]}
+            else:  # Just adding another track
+                _lib[_mp3_file.performer][_mp3_file.album]['tracks'].append(_mp3_file)
+                if _mp3_file.year > _lib[_mp3_file.performer][_mp3_file.album]['year']:  # Bumping album year
+                    _lib[_mp3_file.performer][_mp3_file.album]['year'] = _mp3_file.year
+
     for _performer, _albums in _lib.items():
-        albums_by_year = sorted(_albums, key=lambda _k: _albums['year'])
+        albums_by_year = sorted(_albums, key=lambda _k: _albums[_k]['year'])
         for _index, _album in enumerate(albums_by_year):
             _lib[_performer][_album]['index'] = _index
 
+    return _lib
 
 
 def messy_proto():
@@ -148,9 +150,11 @@ if __name__ == '__main__':
 
     logger_init()
 
-    mp3_lib = scan_dir_for_media(params)
+    mp3_files = scan_dir_for_media(params['target_dir'], [])
+    mp3_lib = lib_processing(params, mp3_files)
 
     for performer, albums in mp3_lib.items():
         for album, album_data in albums.items():
             for track in album_data['tracks']:
-                print('{} - {} - {}\t({})'.format(performer, album, track.title, track.file_path))
+                print('{} - {} - {}\t({})\t{} {}'.format(performer, album, track.title, track.file_path,
+                                                         album_data['index'], album_data['year']))
