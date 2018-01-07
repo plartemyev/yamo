@@ -49,27 +49,33 @@ class Mp3File:
 
 
 def process_file(_p: dict, _album: dict, _media_file: Mp3File) -> str:
+    if _p.get('multiple_performers', False):
+        _p['target_dir'] = os.path.join(_p['target_dir'], _media_file.performer)
+
     if _p['target_dir'] == _p['source_dir'] and _p['dir_structure'] == 'plain':
         # In-place files reorganization to new style: 0101 Track_name.extension - first 01 is an Album index
         _new_name = '{:02d}{:02d} {}.mp3'.format(_album['index'], _media_file.index, _media_file.title)
-        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _new_name)
+        _new_path = os.path.join(_p['target_dir'], _new_name)
+
     elif _p['target_dir'] == _p['source_dir'] and _p['dir_structure'] == 'albums':
         # In-place files reorganization to new style: Album_year Album_name/01 Track_name.extension
         _new_name = '{:02d} {}.mp3'.format(_media_file.index, _media_file.title)
-        _new_path = os.path.join(os.path.dirname(_p['source_dir']), '{} {}'.format(_album['year'], _album['name']),
-                                 _new_name)
+        _new_path = os.path.join(_p['target_dir'], '{} {}'.format(_album['year'], _album['name']), _new_name)
+
     elif _p['target_dir'] != _p['source_dir'] and _p['dir_structure'] == 'plain':
         # Total files reorganization to new style: Performer/0101 Track_name.extension - first 01 is an Album index
         _new_name = '{:02d}{:02d} {}.mp3'.format(_album['index'], _media_file.index, _media_file.title)
-        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _media_file.performer, _new_name)
+        _new_path = os.path.join(_p['target_dir'], _media_file.performer, _new_name)
+
     elif _p['target_dir'] != _p['source_dir'] and _p['dir_structure'] == 'albums':
         # Total files reorganization to new style: Performer/Album_year Album_name/01 Track_name.extension
         _new_name = '{:02d} {}.mp3'.format(_media_file.index, _media_file.title)
-        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _media_file.performer,
+        _new_path = os.path.join(_p['target_dir'], _media_file.performer,
                                  '{} {}'.format(_album['year'], _album['name']), _new_name)
+
     else:
         _new_name = '{:02d}{:02d} {}.mp3'.format(_album['index'], _media_file.index, _media_file.title)
-        _new_path = os.path.join(os.path.dirname(_p['source_dir']), _new_name)
+        _new_path = os.path.join(_p['target_dir'], _new_name)
         mr_logger.warning('Unrecognized file layout requested. Using {}'.format(_new_path))
 
     if _media_file.file_path == _new_path:
@@ -85,18 +91,22 @@ def process_file(_p: dict, _album: dict, _media_file: Mp3File) -> str:
         if _p['op_mode'] == 'move':
             shutil.move(_media_file.file_path, _new_path)
             return _new_path
+
         elif _p['op_mode'] == 'copy' and _p['target_dir'] != _p['source_dir']:
             shutil.copy2(_media_file.file_path, _new_path)
             return _new_path
+
         elif _p['op_mode'] == 'copy' and _p['target_dir'] == _p['source_dir']:
             mr_logger.error('Attempted to re-organize files in-place using copy op_mode. That would be a mess. Exiting')
             sys.exit(2)
+
         else:
             # Dry run mode - log intentions and do nothing
             mr_logger.info('Dry run mode. Wanted to process {} to {}'.format(_media_file.file_path, _new_path))
             return _new_path
+
     except Exception as e:
-        mr_logger.exception("Couldn't move file {} to {}\n{}".format(_media_file.file_path, _new_path, e))
+        mr_logger.exception("Couldn't process file {} to {}\n{}".format(_media_file.file_path, _new_path, e))
 
 
 def scan_dir_for_media(_source_dir, _file_list):
@@ -127,9 +137,9 @@ def lib_processing(_p, _file_list):
                     _lib[_mp3_file.performer][_mp3_file.album]['year'] = _mp3_file.year
 
     for _performer, _albums in _lib.items():
-        albums_by_year = sorted(_albums, key=lambda _k: _albums[_k]['year'])
-        for _index, _album in enumerate(albums_by_year, 1):
-            _lib[_performer][_album]['index'] = _index
+        _albums_by_year = sorted(_albums.items(), key=lambda _k: _k[1]['year'])
+        for _index, _album in enumerate(_albums_by_year, 1):
+            _lib[_performer][_album[0]]['index'] = _index
 
     return _lib
 
@@ -195,9 +205,12 @@ if __name__ == '__main__':
 
     mp3_files = scan_dir_for_media(params['source_dir'], [])
     mp3_lib = lib_processing(params, mp3_files)
+    if len(mp3_lib) > 1:
+        params['multiple_performers'] = True
 
     for performer, albums in mp3_lib.items():
-        for album, album_data in albums.items():
-            for track in album_data['tracks']:
-                print('{} - {} - {}\t({})\t{} {}'.format(performer, album, track.title, track.file_path,
-                                                         album_data['index'], album_data['year']))
+        for album, album_data in sorted(albums.items(), key=lambda _k: _k[1]['index']):
+            for track in sorted(album_data['tracks'], key=lambda _k: _k.index):
+                # print('{} - {} - {}\t({})\t{} {}'.format(performer, album, track.title, track.file_path,
+                #                                          album_data['index'], album_data['year']))
+                process_file(params, album_data, track)
