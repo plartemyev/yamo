@@ -17,37 +17,60 @@ class Mp3File:
     def __init__(self, file_path):
         self.file_path = file_path
         self.performer, self.album, self.title, self.index, self.year = self.get_track_info(file_path)
-        if len(self.performer) < 2:  # TODO: move to get_track_info() and skip unidentified tracks in a safe way
-            mr_logger.info('Performer tag for file {} is fishy. Trying to guess it'.format(os.path.basename(file_path)))
-            self.performer = self.guess_track_info(file_path, 'performer')
-        if len(self.album) < 2:
-            mr_logger.info('Album tag for file {} is fishy. Trying to guess it'.format(os.path.basename(file_path)))
-            self.album = self.guess_track_info(file_path, 'album')
-        if len(self.title) < 2:
-            mr_logger.info('Title tag for file {} is fishy. Trying to guess it'.format(os.path.basename(file_path)))
-            self.title = self.guess_track_info(file_path, 'title')
         mr_logger.debug('{f} is identified as {p} - {a} - {t}'.format(f=os.path.basename(file_path), p=self.performer,
                                                                       a=self.album, t=self.title))
 
         MediaAlbum.handle(self)
 
     @staticmethod
-    def guess_track_info(mp3file, what_is_missing):
-        return ''  # TODO: implement alternate identification (fingerprints) and guessing logic
+    def guess_track_info(file_path, *what_is_missing):
+        _pieces = []
+        mr_logger.info('Unable to read IDv3 tags, going to use other means of identification ({})'.format(file_path))
+
+        # TODO: implement alternate identification (fingerprints) and guessing logic
+
+        for _piece in what_is_missing:
+            _pieces.append(_piece)
+
+        if any([len(_i) < 2 for _i in what_is_missing]):
+            raise UserWarning('Unidentified track', file_path)
+
+        raise UserWarning('Unidentified track', file_path)
+        # return _pieces
 
     @staticmethod
-    def get_track_info(mp3file):
+    def get_track_info(file_path):
         try:
-            mp3tags = mutagen.mp3.MP3(mp3file)
+            mp3tags = mutagen.mp3.MP3(file_path)
             _track_performer = str(mp3tags.get(key='TPE2'))
             _track_album = str(mp3tags.get(key='TALB'))
             _track_title = str(mp3tags.get(key='TIT2'))
-            _track_ind = int(str(mp3tags.get(key='TRCK')).split('/')[0])
-            _track_year = int(str(mp3tags.get(key='TDRC')))
+            _track_year = mp3tags.get(key='TDRC')
+            _track_ind = mp3tags.get(key='TRCK')
+            if _track_ind:
+                _track_ind = int(str(_track_ind).split('/')[0])
+            if _track_year:
+                _track_year = int(str(_track_year))
+
+            if not any((mp3tags.get(key='TPE2'), mp3tags.get(key='TALB'), mp3tags.get(key='TIT2'))):
+                _track_performer, _track_album, _track_title, _track_year = Mp3File.guess_track_info(
+                    file_path, 'performer', 'album', 'title', 'year')
+
+            if len(_track_performer) < 2:
+                mr_logger.info(
+                    'Performer tag for file {} is fishy. Trying to guess it'.format(file_path))
+                _track_performer = Mp3File.guess_track_info(file_path, 'performer')
+            if len(_track_album) < 2:
+                mr_logger.info('Album tag for file {} is fishy. Trying to guess it'.format(file_path))
+                _track_album = Mp3File.guess_track_info(file_path, 'album')
+            if len(_track_title) < 2:
+                mr_logger.info('Title tag for file {} is fishy. Trying to guess it'.format(file_path))
+                _track_title = Mp3File.guess_track_info(file_path, 'title')
+
             return _track_performer, _track_album, _track_title, _track_ind, _track_year
+
         except Exception as e:
-            mr_logger.info('Unable to read IDv3 tags, going to use other means of identification', e)
-            return '', '', ''
+            raise
 
 
 class MediaAlbum:
@@ -102,8 +125,15 @@ class MediaAlbum:
 class MediaLib:
     def __init__(self, files: list):
         for path in files:
-            Mp3File(path)  # Just initializing it.
-
+            try:
+                Mp3File(path)  # Just initializing it.
+            except Exception as e:
+                if isinstance(e, UserWarning):
+                    mr_logger.info('Unable to identify media file, skipping it. {}'.format(e))
+                else:
+                    mr_logger.warning('Something unexpected happened while examining {}. Skipping the file.\n{}'.format(
+                        path, e))
+                continue
         print(MediaAlbum.albums)
 
 
