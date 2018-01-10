@@ -17,7 +17,7 @@ class Mp3File:
     def __init__(self, file_path):
         self.file_path = file_path
         self.performer, self.album, self.title, self.index, self.year = self.get_track_info(file_path)
-        if len(self.performer) < 2:
+        if len(self.performer) < 2:  # TODO: move to get_track_info() and skip unidentified tracks in a safe way
             mr_logger.info('Performer tag for file {} is fishy. Trying to guess it'.format(os.path.basename(file_path)))
             self.performer = self.guess_track_info(file_path, 'performer')
         if len(self.album) < 2:
@@ -29,9 +29,11 @@ class Mp3File:
         mr_logger.debug('{f} is identified as {p} - {a} - {t}'.format(f=os.path.basename(file_path), p=self.performer,
                                                                       a=self.album, t=self.title))
 
+        MediaAlbum.handle(self)
+
     @staticmethod
     def guess_track_info(mp3file, what_is_missing):
-        return ''  # TODO: implement guessing logic
+        return ''  # TODO: implement alternate identification (fingerprints) and guessing logic
 
     @staticmethod
     def get_track_info(mp3file):
@@ -46,6 +48,63 @@ class Mp3File:
         except Exception as e:
             mr_logger.info('Unable to read IDv3 tags, going to use other means of identification', e)
             return '', '', ''
+
+
+class MediaAlbum:
+    albums = {}  # Storage for all instances of this class
+
+    @classmethod
+    def handle(cls, track: Mp3File):  # Not exactly a factory method. Returns appropriate instance of MediaAlbum object
+        if track.performer in cls.albums.keys():
+            if track.album in cls.albums[track.performer].keys():
+                cls.albums[track.performer][track.album].compositions = track
+                return cls.albums[track.performer][track.album]
+        return cls(track)
+
+    @classmethod
+    def get_performers(cls) -> list:
+        return list(cls.albums.keys())
+
+    @classmethod
+    def get_albums_for_performer(cls, performer: str) -> list:
+        return list(cls.albums[performer].items()[1])
+
+    def __init__(self, track: Mp3File):
+        self.name = track.album
+        self.performer = track.performer
+        self.year = track.year
+        self.index = 0
+        self._compositions = [track]
+        if self.performer not in self.albums.keys():
+            self.albums[self.performer] = {self.name: self}
+        else:
+            self.albums[self.performer][self.name] = self
+            self.reindex_albums()
+
+    @property
+    def compositions(self) -> list:
+        return self._compositions
+
+    @compositions.setter
+    def compositions(self, track: Mp3File):
+        if track.year > self.year:
+            self.year = track.year
+            self.reindex_albums()
+        self._compositions.sort(key=lambda _k: _k.index)
+        self._compositions.append(track)
+
+    def reindex_albums(self):
+        _albums_by_year = sorted(self.albums[self.performer].values(), key=lambda _k: _k.year)
+        for _index, _album in enumerate(_albums_by_year, 1):
+            self.albums[self.performer][_album.name].index = _index
+
+
+class MediaLib:
+    def __init__(self, files: list):
+        for path in files:
+            Mp3File(path)  # Just initializing it.
+
+        print(MediaAlbum.albums)
 
 
 def process_file(_p: dict, _album: dict, _media_file: Mp3File) -> str:
@@ -204,13 +263,17 @@ if __name__ == '__main__':
     logger_init()
 
     mp3_files = scan_dir_for_media(params['source_dir'], [])
-    mp3_lib = lib_processing(params, mp3_files)
-    if len(mp3_lib) > 1:
-        params['multiple_performers'] = True
 
-    for performer, albums in mp3_lib.items():
-        for album, album_data in sorted(albums.items(), key=lambda _k: _k[1]['index']):
-            for track in sorted(album_data['tracks'], key=lambda _k: _k.index):
-                # print('{} - {} - {}\t({})\t{} {}'.format(performer, album, track.title, track.file_path,
-                #                                          album_data['index'], album_data['year']))
-                process_file(params, album_data, track)
+    m_lib = MediaLib(mp3_files)
+
+    # mp3_lib = lib_processing(params, mp3_files)
+    # if len(mp3_lib) > 1:
+    #     params['multiple_performers'] = True
+    #
+    # print(mp3_lib)
+
+    # for performer, albums in mp3_lib.items():
+    #     for album, album_data in sorted(albums.items(), key=lambda _k: _k[1]['index']):
+    #         for track in sorted(album_data['tracks'], key=lambda _k: _k.index):
+    #             album_short = {'name': album, }
+    #             process_file(params, album_data, track)
