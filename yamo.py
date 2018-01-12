@@ -18,16 +18,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.ui.sourceDirSelector.clicked.connect(self.dirSelectionDialog)
-        self.ui.targetDirSelector.clicked.connect(self.dirSelectionDialog)
+        self.ui.sourceDirSelectBtn.clicked.connect(self.dirSelectionDialog)
+        self.ui.targetDirSelectBtn.clicked.connect(self.dirSelectionDialog)
         self.ui.sourceDirectoryInput.textChanged.connect(self.sourceDirProvided)
         self.show()
 
     def dirSelectionDialog(self):
         _dir = QtWidgets.QFileDialog.getExistingDirectory(directory='.')
-        if self.sender().objectName() == 'sourceDirSelector':
+        if self.sender().objectName() == 'sourceDirSelectBtn':
             self.ui.sourceDirectoryInput.setText(_dir)
-        elif self.sender().objectName() == 'targetDirSelector':
+        elif self.sender().objectName() == 'targetDirSelectBtn':
             self.ui.targetDirectoryInput.setText(_dir)
 
     def sourceDirProvided(self):
