@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import media_recollect
 from PyQt5 import QtWidgets, uic
 from ui_resources import music_sort
@@ -19,6 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def initUI(self):
         self.ui.sourceDirSelector.clicked.connect(self.dirSelectionDialog)
         self.ui.targetDirSelector.clicked.connect(self.dirSelectionDialog)
+        self.ui.sourceDirectoryInput.textChanged.connect(self.sourceDirProvided)
         self.show()
 
     def dirSelectionDialog(self):
@@ -27,6 +29,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.sourceDirectoryInput.setText(_dir)
         elif self.sender().objectName() == 'targetDirSelector':
             self.ui.targetDirectoryInput.setText(_dir)
+
+    def sourceDirProvided(self):
+        _source_dir = self.ui.sourceDirectoryInput.text()
+        if os.path.isdir(_source_dir):
+            if len(self.ui.targetDirectoryInput.text()) == 0:
+                self.ui.targetDirectoryInput.setText(_source_dir)
+            self.ui.commenceBtn.setEnabled(True)
 
 
 if __name__ == '__main__':
