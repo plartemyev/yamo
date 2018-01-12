@@ -10,20 +10,51 @@
     <height>540</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>1</horstretch>
+    <verstretch>1</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>800</width>
+    <height>540</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>800</width>
+    <height>540</height>
+   </size>
+  </property>
+  <property name="baseSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>YAMO (Yet Another Multimedia Organizer)</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="audio-x-generic"/>
+   <iconset theme="audio-x-generic">
+    <normaloff>.</normaloff>.</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <widget class="QWidget" name="formLayoutWidget">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>10</y>
       <width>780</width>
-      <height>140</height>
+      <height>130</height>
      </rect>
     </property>
     <layout class="QFormLayout" name="formLayout">
@@ -51,7 +82,8 @@
           <string>Source directory</string>
          </property>
          <property name="icon">
-          <iconset theme="document-open"/>
+          <iconset theme="document-open">
+           <normaloff>.</normaloff>.</iconset>
          </property>
         </widget>
        </item>
@@ -67,7 +99,11 @@
      <item row="1" column="1">
       <layout class="QHBoxLayout" name="targetDirSelectionBlock">
        <item>
-        <widget class="QLineEdit" name="targetDirectoryInput"/>
+        <widget class="QLineEdit" name="targetDirectoryInput">
+         <property name="placeholderText">
+          <string>If not provided - in-place rearrangement will occur.</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="targetDirSelectBtn">
@@ -81,7 +117,8 @@
           <string>Target directory</string>
          </property>
          <property name="icon">
-          <iconset theme="document-open"/>
+          <iconset theme="document-open">
+           <normaloff>.</normaloff>.</iconset>
          </property>
         </widget>
        </item>
@@ -89,13 +126,6 @@
      </item>
      <item row="2" column="1">
       <layout class="QHBoxLayout" name="selectablesBlock">
-       <item>
-        <widget class="QLabel" name="layoutSelectionLabel">
-         <property name="text">
-          <string>Desired music files layout</string>
-         </property>
-        </widget>
-       </item>
        <item>
         <widget class="QRadioButton" name="layoutPlainRbtn">
          <property name="autoFillBackground">
@@ -107,6 +137,9 @@
          <property name="checked">
           <bool>true</bool>
          </property>
+         <attribute name="buttonGroup">
+          <string notr="true">filesLayoutRbtnGroup</string>
+         </attribute>
         </widget>
        </item>
        <item>
@@ -120,6 +153,9 @@
          <property name="checked">
           <bool>false</bool>
          </property>
+         <attribute name="buttonGroup">
+          <string notr="true">filesLayoutRbtnGroup</string>
+         </attribute>
         </widget>
        </item>
        <item>
@@ -130,24 +166,50 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="allowFilesModificationChkBox">
-         <property name="text">
-          <string>Allow files modification</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>40</width>
-           <height>20</height>
+           <width>0</width>
+           <height>0</height>
           </size>
          </property>
         </spacer>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="noopRbtn">
+         <property name="text">
+          <string>Dry r&amp;un</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">operationModeRbtnGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="copyRbtn">
+         <property name="text">
+          <string>Copy</string>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">operationModeRbtnGroup</string>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="moveRbtn">
+         <property name="text">
+          <string>Move</string>
+         </property>
+         <attribute name="buttonGroup">
+          <string notr="true">operationModeRbtnGroup</string>
+         </attribute>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="commenceBtn">
@@ -164,21 +226,29 @@
           <string>Run</string>
          </property>
          <property name="icon">
-          <iconset theme="system-run"/>
+          <iconset theme="system-run">
+           <normaloff>.</normaloff>.</iconset>
          </property>
         </widget>
        </item>
       </layout>
      </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="layoutSelectionLabel">
+       <property name="text">
+        <string>Desired music files layout</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </widget>
-   <widget class="QPlainTextEdit" name="loggingOutput">
+   <widget class="QPlainTextEdit" name="loggingOutputField">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>160</y>
       <width>780</width>
-      <height>310</height>
+      <height>320</height>
      </rect>
     </property>
     <property name="acceptDrops">
@@ -222,4 +292,8 @@
  </tabstops>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="filesLayoutRbtnGroup"/>
+  <buttongroup name="operationModeRbtnGroup"/>
+ </buttongroups>
 </ui>
