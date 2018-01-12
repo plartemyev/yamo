@@ -3,7 +3,7 @@
 import sys
 import os
 import logging
-import media_recollect
+from media_recollect import media_recollect as mr
 from PyQt5 import QtWidgets, uic
 from ui_resources import music_sort
 
@@ -34,6 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.targetDirSelectBtn.clicked.connect(self.dirSelectionDialog)
         self.ui.sourceDirectoryInput.editingFinished.connect(self.sourceDirProvided)
         self.ui.commenceBtn.clicked.connect(self.commenceProcessing)
+        self.ui.progressBar.hide()
 
         self.show()
 
@@ -68,8 +69,22 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             params['op_mode'] = 'no-op'
 
-        logging.info('testing testing...')
-        logging.info(params)
+        mp3_files = mr.scan_dir_for_media(params['source_dir'], [])
+
+        self.ui.progressBar.setMaximum(len(mp3_files))
+        self.ui.progressBar.setValue(0)
+        self.ui.progressBar.setEnabled(True)
+        self.ui.progressBar.show()
+
+        m_lib = mr.MediaLib(mp3_files)
+        for performer in m_lib.get_performers():
+            for album in m_lib.get_albums(performer):
+                for _track in mr.MediaAlbum.albums[performer][album].compositions:
+                    m_lib.process_file(params, mr.MediaAlbum.albums[performer][album], _track)
+                    self.ui.progressBar.setValue(self.ui.progressBar.value() + 1)
+
+        mr.MediaAlbum.albums = {}
+        del mp3_files
 
 
 if __name__ == '__main__':
@@ -78,7 +93,8 @@ if __name__ == '__main__':
 
     logging.captureWarnings(True)
     logWidget = QtLogFrame(yamo_ui.ui.loggingOutputField)
-    logWidget.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y%m%d %H:%M:%S'))
+    log_message_format = '%(name)s:%(levelname)s %(message)s'
+    logWidget.setFormatter(logging.Formatter(log_message_format, datefmt='%Y%m%d %H:%M:%S'))
     logging.getLogger().addHandler(logWidget)
     logging.getLogger().setLevel(logging.INFO)
 

@@ -131,7 +131,8 @@ class MediaLib:
                 if isinstance(e, UserWarning):
                     mr_logger.info('Unable to identify media file, skipping it. {}'.format(e.args[1]))
                 else:
-                    mr_logger.warning('Something unexpected happened while examining the file. Skipping. {}'.format(e))
+                    mr_logger.warning('Something unexpected happened while examining the file {}. Skipping. {}'
+                                      .format(path, e))
                 continue
 
         if len(MediaAlbum.albums) > 1:
@@ -218,7 +219,7 @@ class MediaLib:
         mr_logger.debug('Processing {} to {}'.format(_track.file_path, _new_path))
 
         try:
-            if not os.path.exists(os.path.dirname(_new_path)):
+            if _p['op_mode'] in ('move', 'copy' ) and not os.path.exists(os.path.dirname(_new_path)):
                 os.makedirs(os.path.dirname(_new_path))
 
             if _p['op_mode'] == 'move':
@@ -231,8 +232,7 @@ class MediaLib:
 
             elif _p['op_mode'] == 'copy' and _p['target_dir'] == _p['source_dir']:
                 mr_logger.error(
-                    'Attempted to re-organize files in-place using copy op_mode. That would be a mess. Exiting')
-                sys.exit(2)
+                    'Attempted to re-organize files in-place using copy op_mode. That would be a mess.')
 
             else:
                 # Dry run mode - log intentions and do nothing
