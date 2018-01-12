@@ -14,7 +14,8 @@
    <string>YAMO (Yet Another Multimedia Organizer)</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="audio-x-generic"/>
+   <iconset theme="audio-x-generic">
+    <normaloff>.</normaloff>.</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QWidget" name="formLayoutWidget">
@@ -22,8 +23,8 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>781</width>
-      <height>141</height>
+      <width>780</width>
+      <height>140</height>
      </rect>
     </property>
     <layout class="QFormLayout" name="formLayout">
@@ -51,20 +52,21 @@
           <string>Source directory</string>
          </property>
          <property name="icon">
-          <iconset theme="document-open"/>
+          <iconset theme="document-open">
+           <normaloff>.</normaloff>.</iconset>
          </property>
         </widget>
        </item>
       </layout>
      </item>
-     <item row="2" column="0">
+     <item row="1" column="0">
       <widget class="QLabel" name="targetDirectoryLabel">
        <property name="text">
         <string>Target directory</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="1" column="1">
       <layout class="QHBoxLayout" name="targetDirSelectionBlock">
        <item>
         <widget class="QLineEdit" name="targetDirectoryInput"/>
@@ -81,13 +83,21 @@
           <string>Target directory</string>
          </property>
          <property name="icon">
-          <iconset theme="document-open"/>
+          <iconset theme="document-open">
+           <normaloff>.</normaloff>.</iconset>
          </property>
         </widget>
        </item>
       </layout>
      </item>
-     <item row="3" column="1">
+     <item row="2" column="0">
+      <widget class="QLabel" name="parametersBlockLabel">
+       <property name="text">
+        <string>Parameters:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
       <layout class="QHBoxLayout" name="selectablesBlock">
        <item>
         <widget class="QLabel" name="layoutSelectionLabel">
@@ -164,7 +174,8 @@
           <string>Run</string>
          </property>
          <property name="icon">
-          <iconset theme="system-run"/>
+          <iconset theme="system-run">
+           <normaloff>.</normaloff>.</iconset>
          </property>
         </widget>
        </item>
@@ -177,18 +188,21 @@
      <rect>
       <x>10</x>
       <y>160</y>
-      <width>781</width>
-      <height>311</height>
+      <width>780</width>
+      <height>310</height>
      </rect>
     </property>
     <property name="acceptDrops">
      <bool>false</bool>
     </property>
     <property name="autoFillBackground">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color:rgb(204, 204, 204)</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
     </property>
     <property name="undoRedoEnabled">
      <bool>false</bool>
