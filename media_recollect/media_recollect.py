@@ -205,32 +205,34 @@ class MediaLib:
 
     def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:  # TODO: implement path cleaning
         if self.multiple_performers:
-            _p['target_dir'] = os.path.join(_p['target_dir'], _track.performer)
+            mr_logger.debug('Multiple performers detected in the source directory')
+            _target_dir = os.path.join(_p['target_dir'], _track.performer)
+        else:
+            _target_dir = _p['target_dir']
 
-        if _p['target_dir'] == _p['source_dir'] and _p['dir_structure'] == 'plain':
-            # In-place files reorganization to new style: 0101 Track_name.extension - first 01 is an Album index
+        if _target_dir == _p['source_dir'] and _p['dir_structure'] == 'plain':
+            mr_logger.debug('In-place files reorganization - "0101 Track_name.extension" - first 01 is an Album index')
             _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
-            _new_path = os.path.join(_p['target_dir'], _new_name)
+            _new_path = os.path.join(_target_dir, _new_name)
 
-        elif _p['target_dir'] == _p['source_dir'] and _p['dir_structure'] == 'albums':
-            # In-place files reorganization to new style: Album_year Album_name/01 Track_name.extension
+        elif _target_dir == _p['source_dir'] and _p['dir_structure'] == 'albums':
+            mr_logger.debug('In-place files reorganization - "Album_year Album_name/01 Track_name.extension"')
             _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
-            _new_path = os.path.join(_p['target_dir'], '{} {}'.format(_album.year, _album.name), _new_name)
+            _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _album.name), _new_name)
 
-        elif _p['target_dir'] != _p['source_dir'] and _p['dir_structure'] == 'plain':
-            # Total files reorganization to new style: Performer/0101 Track_name.extension - first 01 is an Album index
+        elif _target_dir != _p['source_dir'] and _p['dir_structure'] == 'plain':
+            mr_logger.debug('Total reorganization - "Performer/0101 Track_name.extension" - first 01 is an Album index')
             _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
-            _new_path = os.path.join(_p['target_dir'], _track.performer, _new_name)
+            _new_path = os.path.join(_target_dir, _new_name)
 
-        elif _p['target_dir'] != _p['source_dir'] and _p['dir_structure'] == 'albums':
-            # Total files reorganization to new style: Performer/Album_year Album_name/01 Track_name.extension
+        elif _target_dir != _p['source_dir'] and _p['dir_structure'] == 'albums':
+            mr_logger.debug('Total reorganization - "Performer/Album_year Album_name/01 Track_name.extension"')
             _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
-            _new_path = os.path.join(_p['target_dir'], _track.performer,
-                                     '{} {}'.format(_album.year, _album.name), _new_name)
+            _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _album.name), _new_name)
 
         else:
             _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
-            _new_path = os.path.join(_p['target_dir'], _new_name)
+            _new_path = os.path.join(_target_dir, _new_name)
             mr_logger.warning('Unrecognized file layout requested. Using {}'.format(_new_path))
 
         if _track.file_path == _new_path:
@@ -240,24 +242,23 @@ class MediaLib:
         mr_logger.debug('Processing {} to {}\n'.format(_track.file_path, _new_path))
 
         try:
-            if _p['op_mode'] in ('move', 'copy' ) and not os.path.exists(os.path.dirname(_new_path)):
+            if _p['op_mode'] in ('move', 'copy') and not os.path.exists(os.path.dirname(_new_path)):
                 os.makedirs(os.path.dirname(_new_path))
 
             if _p['op_mode'] == 'move':
                 shutil.move(_track.file_path, _new_path)
                 return _new_path
 
-            elif _p['op_mode'] == 'copy' and _p['target_dir'] != _p['source_dir']:
+            elif _p['op_mode'] == 'copy' and _target_dir != _p['source_dir']:
                 shutil.copy2(_track.file_path, _new_path)
                 return _new_path
 
-            elif _p['op_mode'] == 'copy' and _p['target_dir'] == _p['source_dir']:  # TODO: move to yamo.py
+            elif _p['op_mode'] == 'copy' and _target_dir == _p['source_dir']:  # TODO: move to yamo.py
                 mr_logger.error(
                     'Attempted to re-organize files in-place using copy op_mode. That would be a mess.\n')
 
             else:
-                # Dry run mode - log intentions and do nothing
-                # mr_logger.info('Dry run mode. Wanted to process {} to {}\n'.format(_track.file_path, _new_path))
+                # Dry run mode - return suggested new path and do nothing
                 return _new_path
 
         except Exception as e:
