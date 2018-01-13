@@ -39,11 +39,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def dirSelectionDialog(self):
-        _dir = QtWidgets.QFileDialog.getExistingDirectory(directory='.')
         if self.sender().objectName() == 'sourceDirSelectBtn':
+            _dir = QtWidgets.QFileDialog.getExistingDirectory(directory=self.ui.sourceDirectoryInput.text())
             self.ui.sourceDirectoryInput.setText(_dir)
             self.sourceDirProvided()
         elif self.sender().objectName() == 'targetDirSelectBtn':
+            _dir = QtWidgets.QFileDialog.getExistingDirectory(directory=self.ui.targetDirectoryInput.text())
             self.ui.targetDirectoryInput.setText(_dir)
 
     def sourceDirProvided(self):
@@ -54,6 +55,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.commenceBtn.setEnabled(True)
 
     def commenceProcessing(self):
+        self.ui.loggingOutputField.clear()
         params = {'source_dir': self.ui.sourceDirectoryInput.text(), 'target_dir': self.ui.targetDirectoryInput.text()}
 
         if self.ui.layoutAlbumsRbtn.isChecked():
@@ -96,6 +98,6 @@ if __name__ == '__main__':
     log_message_format = '%(name)s:%(levelname)s %(message)s'
     logWidget.setFormatter(logging.Formatter(log_message_format, datefmt='%Y%m%d %H:%M:%S'))
     logging.getLogger().addHandler(logWidget)
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.DEBUG)
 
     sys.exit(app.exec_())

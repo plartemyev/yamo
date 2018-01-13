@@ -16,58 +16,79 @@ logging.captureWarnings(True)
 class Mp3File:
     def __init__(self, file_path):
         self.file_path = file_path
-        self.performer, self.album, self.title, self.index, self.year = self.get_track_info(file_path)
-        mr_logger.debug('{f} is identified as {p} - {a} - {t}'.format(f=os.path.basename(file_path), p=self.performer,
-                                                                      a=self.album, t=self.title))
+        self.performer = ''
+        self.album = ''
+        self.title = ''
+        self.index = 0
+        self.year = 0
+        self.get_track_info()
+        mr_logger.debug('{f} is identified as {p} - {a} - {t}, year {y}, index {i}\n'
+                        .format(f=os.path.basename(self.file_path), p=self.performer, a=self.album, t=self.title,
+                                y=self.year, i=self.index))
 
         MediaAlbum.handle(self)
 
-    @staticmethod
-    def guess_track_info(file_path, *what_is_missing):
+    def guess_info(self, *what_is_missing: str) -> list:
         _pieces = []
-        mr_logger.info('Unable to read IDv3 tags, going to use other means of identification ({})'.format(file_path))
+        mr_logger.info('Unable to read IDv3 tags, trying other means of identification ({})'.format(self.file_path))
 
         # TODO: implement alternate identification (fingerprints) and guessing logic
-
         for _piece in what_is_missing:
-            _pieces.append(_piece)
+            _pieces.append(None)
 
-        if any([len(_i) < 2 for _i in what_is_missing]):
-            raise UserWarning('Unidentified track', file_path)
+        if any([_i is None for _i in _pieces]):
+            raise UserWarning('Unidentified track', self.file_path)
 
-        raise UserWarning('Unidentified track', file_path)
-        # return _pieces
+        return _pieces
 
-    @staticmethod
-    def get_track_info(file_path):
+    def get_track_info(self):
         try:
-            mp3tags = mutagen.mp3.MP3(file_path)
-            _track_performer = str(mp3tags.get(key='TPE2'))
-            _track_album = str(mp3tags.get(key='TALB'))
-            _track_title = str(mp3tags.get(key='TIT2'))
-            _track_year = mp3tags.get(key='TDRC')
-            _track_ind = mp3tags.get(key='TRCK')
-            if _track_ind:
-                _track_ind = int(str(_track_ind).split('/')[0])
-            if _track_year:
-                _track_year = int(str(_track_year))
+            mp3tags = mutagen.mp3.MP3(self.file_path)
+            _performer = mp3tags.get(key='TPE2')
+            _album = mp3tags.get(key='TALB')
+            _title = mp3tags.get(key='TIT2')
+            _year = mp3tags.get(key='TDRC')
+            _index = mp3tags.get(key='TRCK')
 
-            if not any((mp3tags.get(key='TPE2'), mp3tags.get(key='TALB'), mp3tags.get(key='TIT2'))):
-                _track_performer, _track_album, _track_title, _track_year = Mp3File.guess_track_info(
-                    file_path, 'performer', 'album', 'title', 'year')
+            if not _performer:
+                _performer = mp3tags.get(key='TPE1')  # Try to use Track performer if Album Performer is empty.
 
-            if len(_track_performer) < 2:
-                mr_logger.info(
-                    'Performer tag for file {} is fishy. Trying to guess it'.format(file_path))
-                _track_performer = Mp3File.guess_track_info(file_path, 'performer')
-            if len(_track_album) < 2:
-                mr_logger.info('Album tag for file {} is fishy. Trying to guess it'.format(file_path))
-                _track_album = Mp3File.guess_track_info(file_path, 'album')
-            if len(_track_title) < 2:
-                mr_logger.info('Title tag for file {} is fishy. Trying to guess it'.format(file_path))
-                _track_title = Mp3File.guess_track_info(file_path, 'title')
+            if not any([_performer, _album, _title]):  # No data at all
+                _performer, _album, _title, _year, _index = self.guess_info(
+                    'performer', 'album', 'title', 'year', 'index')
 
-            return _track_performer, _track_album, _track_title, _track_ind, _track_year
+            if _index:
+                _i = str(_index)
+                if _i.isdigit():
+                    self.index = int(_i)
+                else:
+                    _i = re.split(r'[^0-9]', _i, 1)[0]
+                    if _i.isdigit():
+                        self.index = int(_i)
+
+            if _year:
+                _i = str(_year)
+                if _i.isdigit():
+                    self.year = int(_i)
+                else:
+                    _i = re.split(r'[^0-9]', _i, 1)[0]
+                    if _i.isdigit():
+                        self.year = int(_i)
+
+            if _performer and len(str(_performer)) < 2:
+                mr_logger.info('Performer tag for file {} is fishy. Trying to guess it'.format(self.file_path))
+                _performer = self.guess_info('performer')
+            if _album and len(str(_album)) < 2:
+                mr_logger.info('Album tag for file {} is fishy. Trying to guess it'.format(self.file_path))
+                _album = self.guess_info('album')
+            if _title and len(str(_title)) < 2:
+                mr_logger.info('Title tag for file {} is fishy. Trying to guess it'.format(self.file_path))
+                _track_title = self.guess_info('title')
+
+            # TODO: implement path cleaning (temporary hack)
+            self.performer = re.sub(r'[/\\]', '_', str(_performer))
+            self.album = re.sub(r'[/\\]', '_', str(_album))
+            self.title = re.sub(r'[/\\]', '_', str(_title))
 
         except Exception as e:
             raise
@@ -182,7 +203,7 @@ class MediaLib:
                                 _tracks.extend(MediaAlbum.albums[performer][album].compositions)
                 return tuple(_tracks)
 
-    def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:
+    def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:  # TODO: implement path cleaning
         if self.multiple_performers:
             _p['target_dir'] = os.path.join(_p['target_dir'], _track.performer)
 
@@ -214,9 +235,9 @@ class MediaLib:
 
         if _track.file_path == _new_path:
             #  Normally this shouldn't happen
-            mr_logger.warning('Duplicated file encountered - {}'.format(_new_path))
+            mr_logger.warning('Duplicated file encountered - {}\n'.format(_new_path))
 
-        mr_logger.debug('Processing {} to {}'.format(_track.file_path, _new_path))
+        mr_logger.debug('Processing {} to {}\n'.format(_track.file_path, _new_path))
 
         try:
             if _p['op_mode'] in ('move', 'copy' ) and not os.path.exists(os.path.dirname(_new_path)):
@@ -230,17 +251,17 @@ class MediaLib:
                 shutil.copy2(_track.file_path, _new_path)
                 return _new_path
 
-            elif _p['op_mode'] == 'copy' and _p['target_dir'] == _p['source_dir']:
+            elif _p['op_mode'] == 'copy' and _p['target_dir'] == _p['source_dir']:  # TODO: move to yamo.py
                 mr_logger.error(
-                    'Attempted to re-organize files in-place using copy op_mode. That would be a mess.')
+                    'Attempted to re-organize files in-place using copy op_mode. That would be a mess.\n')
 
             else:
                 # Dry run mode - log intentions and do nothing
-                mr_logger.info('Dry run mode. Wanted to process {} to {}'.format(_track.file_path, _new_path))
+                # mr_logger.info('Dry run mode. Wanted to process {} to {}\n'.format(_track.file_path, _new_path))
                 return _new_path
 
         except Exception as e:
-            mr_logger.exception("Couldn't process file {} to {}\n{}".format(_track.file_path, _new_path, e))
+            mr_logger.exception("Couldn't process file {} to {}\n{}\n".format(_track.file_path, _new_path, e))
 
 
 def scan_dir_for_media(_source_dir, _file_list):
