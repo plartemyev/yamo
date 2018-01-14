@@ -111,13 +111,17 @@ class MainWindow(QtWidgets.QMainWindow):
         m_lib = mr.MediaLib(mp3_files)
         if self.ui.forcePerformerDirChkBtn.isChecked():
             m_lib.multiple_performers = True
+
+        m_lib.straighten_performers_line()
+        m_lib.check_multiple_performers_presence()
+
         for performer in m_lib.get_performers():
             for album in m_lib.get_albums(performer):
                 for _track in mr.MediaAlbum.albums[performer][album].compositions:
                     m_lib.process_file(params, mr.MediaAlbum.albums[performer][album], _track)
                     self.ui.progressBar.setValue(self.ui.progressBar.value() + 1)
 
-        mr.MediaAlbum.albums = {}
+        mr.MediaAlbum.albums.clear()
         del mp3_files
         self.ui.commenceBtn.setEnabled(False)
         self.ui.commenceBtn.setEnabled(True)

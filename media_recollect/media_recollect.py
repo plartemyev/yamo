@@ -5,7 +5,6 @@ import os
 import re
 import logging
 import shutil
-
 import mutagen.mp3
 import sys
 
@@ -99,7 +98,7 @@ class MediaAlbum:
 
     @classmethod
     def handle(cls, track: Mp3File):  # Not exactly a factory method. Returns appropriate instance of MediaAlbum object
-        if track.performer in cls.albums.keys():  # TODO: handle situations like "TPE2: Katy B x Diplo x Iggy Azaelia"
+        if track.performer in cls.albums.keys():
             if track.album in cls.albums[track.performer].keys():
                 cls.albums[track.performer][track.album].compositions = track
                 return cls.albums[track.performer][track.album]
@@ -145,6 +144,7 @@ class MediaAlbum:
 
 class MediaLib:
     def __init__(self, files: list):
+        self.multiple_performers = False
         for path in files:
             try:
                 Mp3File(path)  # Just initializing it.
@@ -156,11 +156,10 @@ class MediaLib:
                                       .format(path, e))
                 continue
 
+    def check_multiple_performers_presence(self):
         if len(MediaAlbum.albums) > 1:
             self.multiple_performers = True
             mr_logger.info('Multiple performers detected in the source directory')
-        else:
-            self.multiple_performers = False
 
     @staticmethod
     def get_performers() -> tuple:
@@ -204,9 +203,30 @@ class MediaLib:
                                 _tracks.extend(MediaAlbum.albums[performer][album].compositions)
                 return tuple(_tracks)
 
+    @staticmethod
+    def straighten_performers_line():
+        _initial_performers = set(MediaAlbum.albums.keys())
+        _messy_performer_tags = []
+        for _p in _initial_performers:
+            for _o in filter(lambda _o: _o != _p, _initial_performers):
+                if _p in _o:  # "TPE2: Katy B x Diplo x Iggy Azaelia".
+                    mr_logger.debug('Messy album performer tag encountered. Correcting it from "{}" to "{}"'
+                                    .format(_o, _p))
+                    _messy_performer_tags.append(_o)
+                    for _alb in MediaAlbum.albums[_o].keys():
+                        for composition in MediaAlbum.albums[_o][_alb].compositions:
+                            composition.performer = _p
+                            MediaAlbum.handle(composition)
+
+        for _messy_performer in set(_messy_performer_tags):
+            del MediaAlbum.albums[_messy_performer]
+        if len(_initial_performers) > len(set(MediaAlbum.albums.keys())):
+            mr_logger.info('Performers were streamlined from "{}" to "{}"\n'
+                           .format(_initial_performers, set(MediaAlbum.albums.keys())))
+
     def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:  # TODO: implement path cleaning
         if self.multiple_performers:
-            _target_dir = os.path.join(_p['target_dir'], _track.performer)
+            _target_dir = os.path.join(_p['target_dir'], _album.performer)
         else:
             _target_dir = _p['target_dir']
 
