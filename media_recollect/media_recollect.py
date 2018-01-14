@@ -99,7 +99,7 @@ class MediaAlbum:
 
     @classmethod
     def handle(cls, track: Mp3File):  # Not exactly a factory method. Returns appropriate instance of MediaAlbum object
-        if track.performer in cls.albums.keys():
+        if track.performer in cls.albums.keys():  # TODO: handle situations like "TPE2: Katy B x Diplo x Iggy Azaelia"
             if track.album in cls.albums[track.performer].keys():
                 cls.albums[track.performer][track.album].compositions = track
                 return cls.albums[track.performer][track.album]
@@ -150,7 +150,7 @@ class MediaLib:
                 Mp3File(path)  # Just initializing it.
             except Exception as e:
                 if isinstance(e, UserWarning):
-                    mr_logger.info('Unable to identify media file, skipping it. {}'.format(e.args[1]))
+                    mr_logger.warning('Unable to identify media file, skipping it. {}'.format(e.args[1]))
                 else:
                     mr_logger.warning('Something unexpected happened while examining the file {}. Skipping. {}'
                                       .format(path, e))
@@ -158,6 +158,7 @@ class MediaLib:
 
         if len(MediaAlbum.albums) > 1:
             self.multiple_performers = True
+            mr_logger.info('Multiple performers detected in the source directory')
         else:
             self.multiple_performers = False
 
@@ -205,33 +206,47 @@ class MediaLib:
 
     def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:  # TODO: implement path cleaning
         if self.multiple_performers:
-            mr_logger.debug('Multiple performers detected in the source directory')
             _target_dir = os.path.join(_p['target_dir'], _track.performer)
         else:
             _target_dir = _p['target_dir']
 
         if _target_dir == _p['source_dir'] and _p['dir_structure'] == 'plain':
             mr_logger.debug('In-place files reorganization - "0101 Track_name.extension" - first 01 is an Album index')
-            _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
+            if _p['no_indexes']:
+                _new_name = '{}.mp3'.format(_track.title)
+            else:
+                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
             _new_path = os.path.join(_target_dir, _new_name)
 
         elif _target_dir == _p['source_dir'] and _p['dir_structure'] == 'albums':
             mr_logger.debug('In-place files reorganization - "Album_year Album_name/01 Track_name.extension"')
-            _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
+            if _p['no_indexes']:
+                _new_name = '{}.mp3'.format(_track.title)
+            else:
+                _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
             _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _album.name), _new_name)
 
         elif _target_dir != _p['source_dir'] and _p['dir_structure'] == 'plain':
             mr_logger.debug('Total reorganization - "Performer/0101 Track_name.extension" - first 01 is an Album index')
-            _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
+            if _p['no_indexes']:
+                _new_name = '{}.mp3'.format(_track.title)
+            else:
+                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
             _new_path = os.path.join(_target_dir, _new_name)
 
         elif _target_dir != _p['source_dir'] and _p['dir_structure'] == 'albums':
             mr_logger.debug('Total reorganization - "Performer/Album_year Album_name/01 Track_name.extension"')
-            _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
+            if _p['no_indexes']:
+                _new_name = '{}.mp3'.format(_track.title)
+            else:
+                _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
             _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _album.name), _new_name)
 
         else:
-            _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
+            if _p['no_indexes']:
+                _new_name = '{}.mp3'.format(_track.title)
+            else:
+                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
             _new_path = os.path.join(_target_dir, _new_name)
             mr_logger.warning('Unrecognized file layout requested. Using {}'.format(_new_path))
 
@@ -239,7 +254,7 @@ class MediaLib:
             #  Normally this shouldn't happen
             mr_logger.warning('Duplicated file encountered - {}\n'.format(_new_path))
 
-        mr_logger.debug('Processing {} to {}\n'.format(_track.file_path, _new_path))
+        mr_logger.info('Processing {} to {}\n'.format(_track.file_path, _new_path))
 
         try:
             if _p['op_mode'] in ('move', 'copy') and not os.path.exists(os.path.dirname(_new_path)):
@@ -252,10 +267,6 @@ class MediaLib:
             elif _p['op_mode'] == 'copy' and _target_dir != _p['source_dir']:
                 shutil.copy2(_track.file_path, _new_path)
                 return _new_path
-
-            elif _p['op_mode'] == 'copy' and _target_dir == _p['source_dir']:  # TODO: move to yamo.py
-                mr_logger.error(
-                    'Attempted to re-organize files in-place using copy op_mode. That would be a mess.\n')
 
             else:
                 # Dry run mode - return suggested new path and do nothing

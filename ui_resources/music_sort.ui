@@ -11,27 +11,15 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-    <horstretch>1</horstretch>
-    <verstretch>1</verstretch>
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
    </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
     <width>800</width>
     <height>540</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>800</width>
-    <height>540</height>
-   </size>
-  </property>
-  <property name="baseSize">
-   <size>
-    <width>0</width>
-    <height>0</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -48,266 +36,315 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <widget class="QWidget" name="">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>780</width>
-      <height>470</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <layout class="QFormLayout" name="formLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="sourceDirectoryLabel">
-         <property name="text">
-          <string>Source directory</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <layout class="QHBoxLayout" name="sourceDirSelectionBlock" stretch="0,0">
-         <item>
-          <widget class="QLineEdit" name="sourceDirectoryInput"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="sourceDirSelectBtn">
-           <property name="minimumSize">
-            <size>
-             <width>140</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Source directory</string>
-           </property>
-           <property name="icon">
-            <iconset theme="document-open">
-             <normaloff>.</normaloff>.</iconset>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="targetDirectoryLabel">
-         <property name="text">
-          <string>Target directory</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <layout class="QHBoxLayout" name="targetDirSelectionBlock">
-         <item>
-          <widget class="QLineEdit" name="targetDirectoryInput">
-           <property name="placeholderText">
-            <string>If not provided - in-place rearrangement will occur.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="targetDirSelectBtn">
-           <property name="minimumSize">
-            <size>
-             <width>140</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Target directory</string>
-           </property>
-           <property name="icon">
-            <iconset theme="document-open">
-             <normaloff>.</normaloff>.</iconset>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="1">
-        <layout class="QHBoxLayout" name="selectablesBlock">
-         <item>
-          <widget class="QRadioButton" name="layoutPlainRbtn">
-           <property name="autoFillBackground">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>P&amp;lain</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">filesLayoutRbtnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="layoutAlbumsRbtn">
-           <property name="autoFillBackground">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string>B&amp;y albums</string>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">filesLayoutRbtnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <widget class="Line" name="selectablesSep">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="noopRbtn">
-           <property name="text">
-            <string>Dry r&amp;un</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">operationModeRbtnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="copyRbtn">
-           <property name="text">
-            <string>Copy</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">operationModeRbtnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <widget class="QRadioButton" name="moveRbtn">
-           <property name="text">
-            <string>Move</string>
-           </property>
-           <attribute name="buttonGroup">
-            <string notr="true">operationModeRbtnGroup</string>
-           </attribute>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="commenceBtn">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>140</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Run</string>
-           </property>
-           <property name="icon">
-            <iconset theme="system-run">
-             <normaloff>.</normaloff>.</iconset>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="layoutSelectionLabel">
-         <property name="text">
-          <string>Desired music files layout</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
-      <widget class="QProgressBar" name="progressBar">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="value">
-        <number>0</number>
-       </property>
-       <property name="textVisible">
-        <bool>true</bool>
-       </property>
-       <property name="invertedAppearance">
-        <bool>false</bool>
-       </property>
-       <property name="format">
-        <string>%v/%m</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPlainTextEdit" name="loggingOutputField">
-       <property name="font">
-        <font>
-         <pointsize>8</pointsize>
-         <weight>50</weight>
-         <italic>false</italic>
-         <bold>false</bold>
-        </font>
-       </property>
-       <property name="acceptDrops">
-        <bool>false</bool>
-       </property>
-       <property name="autoFillBackground">
-        <bool>false</bool>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">background-color:rgb(204, 204, 204)</string>
-       </property>
-       <property name="undoRedoEnabled">
-        <bool>false</bool>
-       </property>
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-       <property name="centerOnScroll">
-        <bool>false</bool>
-       </property>
-       <property name="placeholderText">
-        <string>Working log should appear here</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>30</height>
-    </rect>
-   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QHBoxLayout" name="sourceDirSelectionBlock" stretch="0,0">
+      <item>
+       <widget class="QLineEdit" name="sourceDirectoryInput">
+        <property name="placeholderText">
+         <string>Source directory</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="sourceDirSelectBtn">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>&amp;Source directory</string>
+        </property>
+        <property name="icon">
+         <iconset theme="document-open">
+          <normaloff>.</normaloff>.</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="targetDirSelectionBlock">
+      <item>
+       <widget class="QLineEdit" name="targetDirectoryInput">
+        <property name="placeholderText">
+         <string>Target directory. If not provided - in-place rearrangement will occur.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="targetDirSelectBtn">
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>&amp;Target directory</string>
+        </property>
+        <property name="icon">
+         <iconset theme="document-open">
+          <normaloff>.</normaloff>.</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="selectablesBlock">
+      <item>
+       <widget class="QRadioButton" name="layoutPlainRbtn">
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>P&amp;lain</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">filesLayoutRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="layoutAlbumsRbtn">
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>B&amp;y albums</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">filesLayoutRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="Line" name="selectablesSep">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="noIndexesChkBtn">
+        <property name="text">
+         <string>No indexes in names</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="forcePerformerDirChkBtn">
+        <property name="text">
+         <string>Distinct directory even for single performer</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>&amp;Log output level:</string>
+        </property>
+        <property name="buddy">
+         <cstring>warningRbtn</cstring>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="warningRbtn">
+        <property name="text">
+         <string>&amp;Warnings</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">loggingLevelRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="infoRbtn">
+        <property name="text">
+         <string>&amp;Informational</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">loggingLevelRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="debugRbtn">
+        <property name="text">
+         <string>&amp;Debug</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">loggingLevelRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="noopRbtn">
+        <property name="text">
+         <string>Dry ru&amp;n</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">operationModeRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="copyRbtn">
+        <property name="text">
+         <string>&amp;Copy</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">operationModeRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="moveRbtn">
+        <property name="text">
+         <string>&amp;Move</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">operationModeRbtnGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="commenceBtn">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>140</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>&amp;Run</string>
+        </property>
+        <property name="icon">
+         <iconset theme="system-run">
+          <normaloff>.</normaloff>.</iconset>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QPlainTextEdit" name="loggingOutputField">
+      <property name="font">
+       <font>
+        <pointsize>8</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="acceptDrops">
+       <bool>false</bool>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:rgb(204, 204, 204)</string>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="sizeAdjustPolicy">
+       <enum>QAbstractScrollArea::AdjustIgnored</enum>
+      </property>
+      <property name="undoRedoEnabled">
+       <bool>false</bool>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+      <property name="centerOnScroll">
+       <bool>false</bool>
+      </property>
+      <property name="placeholderText">
+       <string>Working log should appear here</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="progressBar">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="value">
+       <number>0</number>
+      </property>
+      <property name="textVisible">
+       <bool>true</bool>
+      </property>
+      <property name="invertedAppearance">
+       <bool>false</bool>
+      </property>
+      <property name="format">
+       <string>%v/%m</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
@@ -318,7 +355,8 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="operationModeRbtnGroup"/>
   <buttongroup name="filesLayoutRbtnGroup"/>
+  <buttongroup name="operationModeRbtnGroup"/>
+  <buttongroup name="loggingLevelRbtnGroup"/>
  </buttongroups>
 </ui>
