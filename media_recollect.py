@@ -21,7 +21,7 @@ class Mp3File:
         self.index = 0
         self.year = 0
         self.get_track_info()
-        mr_logger.debug('{f} is identified as {p} - {a} - {t}, year {y}, index {i}\n'
+        mr_logger.debug('{f} is identified as {p} - {a} - {t}, year {y}, index {i}'
                         .format(f=os.path.basename(self.file_path), p=self.performer, a=self.album, t=self.title,
                                 y=self.year, i=self.index))
 
@@ -84,13 +84,20 @@ class Mp3File:
                 mr_logger.info('Title tag for file {} is fishy. Trying to guess it'.format(self.file_path))
                 _track_title = self.guess_info('title')
 
-            # TODO: implement path cleaning (temporary hack)
-            self.performer = re.sub(r'[/\\]', '_', str(_performer))
-            self.album = re.sub(r'[/\\]', '_', str(_album))
-            self.title = re.sub(r'[/\\]', '_', str(_title))
+            self.performer = str(_performer).replace('&', 'and')  # To fight 'A & B' != 'A and B'
+            self.album = str(_album).replace('&', 'and')
+            self.title = str(_title).replace('&', 'and')
 
         except Exception as e:
             raise
+
+    @staticmethod
+    def cleanup_string(_s: str) -> str:
+        _staging_s = re.sub(r'[^a-zA-Z0-9 ._-]', '', _s)
+        _staging_s = re.sub(r'(\s\s+)', ' ', _staging_s)
+        _staging_s = _staging_s.strip(' .')
+        _staging_s = _staging_s.strip()  # just to be safe of non-standard space chars.
+        return _staging_s
 
 
 class MediaAlbum:
@@ -221,58 +228,66 @@ class MediaLib:
         for _messy_performer in set(_messy_performer_tags):
             del MediaAlbum.albums[_messy_performer]
         if len(_initial_performers) > len(set(MediaAlbum.albums.keys())):
-            mr_logger.info('Performers were streamlined from "{}" to "{}"\n'
+            mr_logger.info('Performers were streamlined from "{}" to "{}"'
                            .format(_initial_performers, set(MediaAlbum.albums.keys())))
 
-    def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:  # TODO: implement path cleaning
+    def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:
+        _c_performer = Mp3File.cleanup_string(_album.performer)
+        _c_alb_name = Mp3File.cleanup_string(_album.name)
+        _c_trck_title = Mp3File.cleanup_string(_track.title)
+        if any((_album.performer != _c_performer, _album.name != _c_alb_name, _track.title != _c_trck_title)):
+            mr_logger.debug('Names to be used in file path were cleared. From "{}" "{}" "{}"\nto "{}" "{}" "{}"'
+                            .format(_album.performer, _album.name, _track.title,
+                                    _c_performer, _c_alb_name, _c_trck_title))
+
         if self.multiple_performers:
-            _target_dir = os.path.join(_p['target_dir'], _album.performer)
+            _target_dir = os.path.join(_p['target_dir'], _c_performer)
         else:
             _target_dir = _p['target_dir']
 
         if _target_dir == _p['source_dir'] and _p['dir_structure'] == 'plain':
-            mr_logger.debug('In-place files reorganization - "0101 Track_name.extension" - first 01 is an Album index')
+            # mr_logger.debug('In-place files reorganization - "0101 Track_name.extension" - first 01 is an Album index')
             if _p['no_indexes']:
-                _new_name = '{}.mp3'.format(_track.title)
+                _new_name = '{}.mp3'.format(_c_trck_title)
             else:
-                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
+                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _c_trck_title)
             _new_path = os.path.join(_target_dir, _new_name)
 
         elif _target_dir == _p['source_dir'] and _p['dir_structure'] == 'albums':
-            mr_logger.debug('In-place files reorganization - "Album_year Album_name/01 Track_name.extension"')
+            # mr_logger.debug('In-place files reorganization - "Album_year Album_name/01 Track_name.extension"')
             if _p['no_indexes']:
-                _new_name = '{}.mp3'.format(_track.title)
+                _new_name = '{}.mp3'.format(_c_trck_title)
             else:
-                _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
-            _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _album.name), _new_name)
+                _new_name = '{:02d} {}.mp3'.format(_track.index, _c_trck_title)
+            _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _c_alb_name), _new_name)
 
         elif _target_dir != _p['source_dir'] and _p['dir_structure'] == 'plain':
-            mr_logger.debug('Total reorganization - "Performer/0101 Track_name.extension" - first 01 is an Album index')
+            # mr_logger.debug('Total reorganization - "Performer/0101 Track_name.extension" - first 01 is an Album index')
             if _p['no_indexes']:
-                _new_name = '{}.mp3'.format(_track.title)
+                _new_name = '{}.mp3'.format(_c_trck_title)
             else:
-                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
+                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _c_trck_title)
             _new_path = os.path.join(_target_dir, _new_name)
 
         elif _target_dir != _p['source_dir'] and _p['dir_structure'] == 'albums':
-            mr_logger.debug('Total reorganization - "Performer/Album_year Album_name/01 Track_name.extension"')
+            # mr_logger.debug('Total reorganization - "Performer/Album_year Album_name/01 Track_name.extension"')
             if _p['no_indexes']:
-                _new_name = '{}.mp3'.format(_track.title)
+                _new_name = '{}.mp3'.format(_c_trck_title)
             else:
-                _new_name = '{:02d} {}.mp3'.format(_track.index, _track.title)
-            _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _album.name), _new_name)
+                _new_name = '{:02d} {}.mp3'.format(_track.index, _c_trck_title)
+            _new_path = os.path.join(_target_dir, '{} {}'.format(_album.year, _c_alb_name), _new_name)
 
         else:
             if _p['no_indexes']:
-                _new_name = '{}.mp3'.format(_track.title)
+                _new_name = '{}.mp3'.format(_c_trck_title)
             else:
-                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _track.title)
+                _new_name = '{:02d}{:02d} {}.mp3'.format(_album.index, _track.index, _c_trck_title)
             _new_path = os.path.join(_target_dir, _new_name)
             mr_logger.warning('Unrecognized file layout requested. Using {}'.format(_new_path))
 
         if _track.file_path == _new_path:
             #  Normally this shouldn't happen
-            mr_logger.warning('Duplicated file encountered - {}\n'.format(_new_path))
+            mr_logger.warning('Duplicated file encountered - {}'.format(_new_path))
 
         mr_logger.info('Processing {} to {}\n'.format(_track.file_path, _new_path))
 
@@ -305,14 +320,6 @@ def scan_dir_for_media(_source_dir, _file_list):
             _file_list.append(_entry.path)
 
     return _file_list
-
-
-def messy_proto():
-    t_string = "12    Best Of The Best. Part One. The Past. CD 8 - Electro Lights (2005) = +_  "
-    t_string = re.sub(r'(\s\s+)|(\d)|([\)\(\}\{\[\]\-\_\=\+\.])', '', t_string)
-    t_string = re.sub(r'(\s\s+)', ' ', t_string)
-
-    print(t_string)
 
 
 def get_args():
