@@ -26,8 +26,8 @@
    <string>YAMO (Yet Another Multimedia Organizer)</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="audio-x-generic">
-    <normaloff>.</normaloff>.</iconset>
+   <iconset>
+    <normaloff>ui_resources/icons/audio-x-generic.svg</normaloff>ui_resources/icons/audio-x-generic.svg</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -58,8 +58,8 @@
          <string>&amp;Source directory</string>
         </property>
         <property name="icon">
-         <iconset theme="document-open">
-          <normaloff>.</normaloff>.</iconset>
+         <iconset>
+          <normaloff>ui_resources/icons/document-open.svg</normaloff>ui_resources/icons/document-open.svg</iconset>
         </property>
        </widget>
       </item>
@@ -86,8 +86,8 @@
          <string>&amp;Target directory</string>
         </property>
         <property name="icon">
-         <iconset theme="document-open">
-          <normaloff>.</normaloff>.</iconset>
+         <iconset>
+          <normaloff>ui_resources/icons/document-open.svg</normaloff>ui_resources/icons/document-open.svg</iconset>
         </property>
        </widget>
       </item>
@@ -279,8 +279,8 @@
          <string>&amp;Run</string>
         </property>
         <property name="icon">
-         <iconset theme="system-run">
-          <normaloff>.</normaloff>.</iconset>
+         <iconset>
+          <normaloff>ui_resources/icons/system-run-symbolic.symbolic.png</normaloff>ui_resources/icons/system-run-symbolic.symbolic.png</iconset>
         </property>
        </widget>
       </item>
@@ -355,8 +355,8 @@
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="loggingLevelRbtnGroup"/>
   <buttongroup name="filesLayoutRbtnGroup"/>
   <buttongroup name="operationModeRbtnGroup"/>
-  <buttongroup name="loggingLevelRbtnGroup"/>
  </buttongroups>
 </ui>

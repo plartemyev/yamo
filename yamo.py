@@ -3,11 +3,12 @@
 import sys
 import os
 import logging
-from media_recollect import media_recollect as mr
+import media_recollect as mr
 from PyQt5 import QtWidgets, uic
-from ui_resources import music_sort
+from PyQt5.QtCore import QDir
 
-# Ui_MainWindow, QtBaseClass = uic.loadUiType('ui_resources/music_sort.ui')
+Ui_MainWindow, QtBaseClass = uic.loadUiType('music_sort.ui')
+# import music_sort
 
 
 class QtLogFrame(logging.Handler):
@@ -23,8 +24,8 @@ class QtLogFrame(logging.Handler):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.ui = music_sort.Ui_MainWindow()
-        # self.ui = Ui_MainWindow()
+        # self.ui = music_sort.Ui_MainWindow()
+        self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
         self.initUI()
@@ -41,11 +42,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def dirSelectionDialog(self):
         if self.sender().objectName() == 'sourceDirSelectBtn':
-            _dir = QtWidgets.QFileDialog.getExistingDirectory(directory=self.ui.sourceDirectoryInput.text())
+            _dir = QDir.toNativeSeparators(
+                QtWidgets.QFileDialog.getExistingDirectory(directory=self.ui.sourceDirectoryInput.text()))
             self.ui.sourceDirectoryInput.setText(_dir)
             self.sourceDirProvided()
         elif self.sender().objectName() == 'targetDirSelectBtn':
-            _dir = QtWidgets.QFileDialog.getExistingDirectory(directory=self.ui.targetDirectoryInput.text())
+            _dir = QDir.toNativeSeparators(
+                QtWidgets.QFileDialog.getExistingDirectory(directory=self.ui.targetDirectoryInput.text()))
             self.ui.targetDirectoryInput.setText(_dir)
 
     def sourceDirProvided(self):
@@ -86,6 +89,7 @@ class MainWindow(QtWidgets.QMainWindow):
             params['dir_structure'] = 'plain'
 
         params['no_indexes'] = self.ui.noIndexesChkBtn.isChecked()
+        # TODO: add option to process only 'original' compositions - omitting anything like 'SongName (instrumental)'
 
         op_mode_selected = self.ui.operationModeRbtnGroup.checkedButton().objectName()
         if op_mode_selected == 'copyRbtn':
@@ -103,6 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         mp3_files = mr.scan_dir_for_media(params['source_dir'], [])
 
+        self.ui.progressBar.setUpdatesEnabled(True)
         self.ui.progressBar.setMaximum(len(mp3_files))
         self.ui.progressBar.setValue(0)
         self.ui.progressBar.setEnabled(True)
@@ -125,6 +130,7 @@ class MainWindow(QtWidgets.QMainWindow):
         del mp3_files
         self.ui.commenceBtn.setEnabled(False)
         self.ui.commenceBtn.setEnabled(True)
+        self.ui.progressBar.setUpdatesEnabled(False)
         self.ui.progressBar.setDisabled(True)
 
 
