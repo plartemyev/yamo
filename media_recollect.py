@@ -12,6 +12,15 @@ import sys
 mr_logger = logging.getLogger(__name__)
 logging.captureWarnings(True)
 
+if 'scandir' not in os.__dict__:  # Python < 3.5 workaround. Of course, scandir module  should be installed in such case.
+    try:
+        import scandir
+        os.scandir = scandir.scandir
+    except Exception as e:
+        mr_logger.error('Unable to use built-in function "os.scandir" or import it from a separate module. \
+            Please use Python>=3.5 or install "scandir" with pip.')
+        sys.exit(1)
+
 
 class Mp3File:
     def __init__(self, file_path):
