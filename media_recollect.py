@@ -322,14 +322,17 @@ class MediaLib:
 
 
 def scan_dir_for_media(_source_dir, _file_list):
-    for _entry in os.scandir(_source_dir):
-        if _entry.is_dir(follow_symlinks=False):
-            _source_dir = _entry.path
-            scan_dir_for_media(_source_dir, _file_list)
-        elif _entry.name.lower().endswith('.mp3'):
-            _file_list.append(_entry.path)
+    try:
+        for _entry in os.scandir(_source_dir):
+            if _entry.is_dir(follow_symlinks=False):
+                _source_dir = _entry.path
+                scan_dir_for_media(_source_dir, _file_list)
+            elif _entry.name.lower().endswith('.mp3'):
+                _file_list.append(_entry.path)
 
-    return _file_list
+        return _file_list
+    except PermissionError:
+        mr_logger.warning(sys.exc_info()[1])
 
 
 def get_args():
