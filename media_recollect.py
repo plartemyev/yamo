@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import argparse
 import os
@@ -228,7 +229,7 @@ class MediaLib:
         for _messy_performer in set(_messy_performer_tags):
             del MediaAlbum.albums[_messy_performer]
         if len(_initial_performers) > len(set(MediaAlbum.albums.keys())):
-            mr_logger.info('Performers were streamlined from "{}" to "{}"'
+            mr_logger.info('Performers were streamlined from "{}" to "{}"\n'
                            .format(_initial_performers, set(MediaAlbum.albums.keys())))
 
     def process_file(self, _p: dict, _album: MediaAlbum, _track: Mp3File) -> str:
@@ -324,11 +325,16 @@ def scan_dir_for_media(_source_dir, _file_list):
 
 def get_args():
     cli = argparse.ArgumentParser(description='Organize mp3 collections')
-    cli.add_argument('--source_dir', type=str, help='Specify source directory to process.')
-    cli.add_argument('--target_dir', type=str, help='Specify where to move the files')
-    cli.add_argument('--op_mode', type=str, default='no-op', help='Mode of operation (no-op/copy/move/')
+    cli.add_argument('--source_dir', type=str,
+                     help='Specify source directory to process. Current directory used if omitted.')
+    cli.add_argument('--target_dir', type=str,
+                     help='Specify where to move the files. "source_dir" used if omitted.')
+    cli.add_argument('--op_mode', type=str, default='no-op',
+                     help='Mode of operation (no-op/copy/move). "no-op" if omitted.')
     cli.add_argument('--dir_structure', type=str, default='plain',
-                     help='Arrange the files by performer or by performer and albums (plain/albums)')
+                     help='Arrange the files by performer or by performer and albums (plain/albums). Plain if omitted.')
+    cli.add_argument('--no_indexes', action='store_true',
+                     help='Do not prefix media files with any indexes. Indexes on if omitted.')
     cli.add_argument('--debug', action='store_true')
     cli_args = cli.parse_args()
 
@@ -354,7 +360,7 @@ def get_args():
         sys.exit(2)
 
     return {'source_dir': _source_dir, 'target_dir': _target_dir, 'dir_structure': cli_args.dir_structure,
-            'op_mode': cli_args.op_mode}
+            'op_mode': cli_args.op_mode, 'no_indexes': cli_args.no_indexes}
 
 
 def logger_init():
@@ -376,6 +382,8 @@ if __name__ == '__main__':
     mp3_files = scan_dir_for_media(params['source_dir'], [])
 
     m_lib = MediaLib(mp3_files)
+    m_lib.straighten_performers_line()
+    m_lib.check_multiple_performers_presence()
 
     for performer in m_lib.get_performers():
         for album in m_lib.get_albums(performer):

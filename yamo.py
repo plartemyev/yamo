@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import sys
 import os
@@ -100,7 +101,7 @@ class MainWindow(QtWidgets.QMainWindow):
             params['op_mode'] = 'no-op'
             
         if params['op_mode'] == 'copy' and params['source_dir'] == params['target_dir']:
-            logging.error('Attempted to re-organize files in-place using copy op_mode. That would be a mess.\n')
+            logging.warning('Attempted to re-organize files in-place using copy op_mode. That would be a mess.\n')
             self.ui.commenceBtn.setEnabled(False)
             self.ui.commenceBtn.setEnabled(True)
             return
