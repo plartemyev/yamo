@@ -40,7 +40,7 @@ sudo fatsort -can /dev/sde1
 ```
 
 `media_recollect.py` module could be used separately from command line:
-```Shell
+```
 media_recollect.py --help
 usage: media_recollect.py [-h] [--source_dir SOURCE_DIR]
                           [--target_dir TARGET_DIR] [--op_mode OP_MODE]
@@ -69,7 +69,7 @@ optional arguments:
 
 REQUIREMENTS
 -------------
-App requires **python3**, **PyQt5** and **mutagen**.
+App requires **python>=3.5 or python>=3 with scandir module**, **PyQt5** and **mutagen**.
 
 TODO
 ----
