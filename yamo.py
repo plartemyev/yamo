@@ -5,8 +5,8 @@ import sys
 import os
 import logging
 import media_recollect as mr
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtCore import QDir
+from PyQt6 import QtWidgets, uic
+from PyQt6.QtCore import QDir
 
 Ui_MainWindow, QtBaseClass = uic.loadUiType('music_sort.ui')
 # import music_sort
@@ -146,4 +146,4 @@ if __name__ == '__main__':
     logging.getLogger().addHandler(logWidget)
     logging.getLogger().setLevel(logging.WARNING)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

@@ -10,13 +10,13 @@ or ungodly amounts of remixes littered over dozens of subdirectories.
 LICENSE
 -------
 This is free software, distributed under the GPL v.3. If you want to discuss
-a release under another license, please open an issue on Github
+a release under another license, please open an issue on GitHub
 
 NOTES
 -----
 As usual with this kind of software :
 This software is provided "AS-IS", without any guarantees. It should not do
-any harm to your system, but if it does, the author, github, etc... cannot
+any harm to your system, but if it does, the author, GitHub, etc... cannot
 be held responsible. Use at your own risk. You have been warned.
 
 Icons were taken from [KDE/breeze-icons](https://github.com/KDE/breeze-icons)
@@ -69,7 +69,7 @@ optional arguments:
 
 REQUIREMENTS
 -------------
-App requires **python>=3.5 or python>=3 with scandir module**, **PyQt5** and **mutagen**.
+App requires **python>=3.5 or python>=3 with scandir module**, **PyQt6** and **mutagen**.
 
 TODO
 ----

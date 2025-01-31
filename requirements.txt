@@ -1,2 +1,2 @@
-mutagen
+mutagen>=1.47.0
 # PyQt5
