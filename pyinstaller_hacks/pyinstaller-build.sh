@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 pyinstaller --clean -y \
 	--add-data ../music_sort.ui:. \
 	--add-data ../ui_resources:ui_resources \
